@@ -1,13 +1,12 @@
-package com.bank.mq.mq_archive_hub;
+package com.bank.mq.archive;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class MqArchiveHubApplicationTests {
+class ArchiveHubApplicationTests {
 
 	@Test
 	void contextLoads() {
 	}
-
 }

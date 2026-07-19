@@ -43,3 +43,5 @@ management:
 app:
   mq:
     queue-name: ${MQ_QUEUE_NAME:DEV.QUEUE.1}
+    dlq-name: ${MQ_DLQ_NAME:DEV.QUEUE.2}
+    concurrency: ${MQ_CONCURRENCY:3-10}

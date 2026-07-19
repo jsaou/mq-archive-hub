@@ -1,8 +1,10 @@
-package com.bank.mq.mq_archive_hub.message;
+package com.bank.mq.archive.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.bank.mq.archive.domain.MqMessage;
 
 public interface MqMessageRepository extends JpaRepository<MqMessage, Long> {
 

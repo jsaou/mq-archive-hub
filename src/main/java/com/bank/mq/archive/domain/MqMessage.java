@@ -1,6 +1,7 @@
-package com.bank.mq.mq_archive_hub.message;
+package com.bank.mq.archive.domain;
 
 import java.time.Instant;
+import java.util.Objects;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,28 +37,27 @@ public class MqMessage {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false, length = 20)
-	private MessageStatus status = MessageStatus.RECEIVED;
+	private MessageStatus status;
 
 	@Column(name = "received_at", nullable = false)
-	private Instant receivedAt = Instant.now();
+	private Instant receivedAt;
 
 	protected MqMessage() {
 	}
 
-	public MqMessage(String messageId, String queueName, String payload) {
-		this.messageId = messageId;
-		this.queueName = queueName;
-		this.payload = payload;
-	}
-
-	public MqMessage withCorrelationId(String correlationId) {
+	public MqMessage(
+			String messageId,
+			String correlationId,
+			String queueName,
+			String payload,
+			String contentType) {
+		this.messageId = Objects.requireNonNull(messageId, "messageId");
+		this.queueName = Objects.requireNonNull(queueName, "queueName");
+		this.payload = Objects.requireNonNull(payload, "payload");
 		this.correlationId = correlationId;
-		return this;
-	}
-
-	public MqMessage withContentType(String contentType) {
 		this.contentType = contentType;
-		return this;
+		this.status = MessageStatus.RECEIVED;
+		this.receivedAt = Instant.now();
 	}
 
 	public void markProcessed() {

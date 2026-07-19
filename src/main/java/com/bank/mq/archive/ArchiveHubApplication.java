@@ -1,13 +1,12 @@
-package com.bank.mq.mq_archive_hub;
+package com.bank.mq.archive;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class MqArchiveHubApplication {
+public class ArchiveHubApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(MqArchiveHubApplication.class, args);
+		SpringApplication.run(ArchiveHubApplication.class, args);
 	}
-
 }

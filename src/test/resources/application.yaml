@@ -12,3 +12,13 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: false
+  jms:
+    listener:
+      auto-startup: false
+
+app:
+  mq:
+    queue-name: DEV.QUEUE.1
+    dlq-name: DEV.QUEUE.2
+    concurrency: 1-1
+
