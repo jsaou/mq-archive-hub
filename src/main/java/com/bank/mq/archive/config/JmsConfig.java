@@ -16,12 +16,12 @@ public class JmsConfig {
 	DefaultJmsListenerContainerFactory jmsListenerContainerFactory(
 			ConnectionFactory connectionFactory,
 			JmsErrorHandler errorHandler,
-			@Value("${app.mq.concurrency:3-10}") String concurrency,
+			AppProperties appProperties,
 			@Value("${spring.jms.listener.auto-startup:true}") boolean autoStartup) {
 		DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
 		factory.setConnectionFactory(connectionFactory);
 		factory.setSessionTransacted(true);
-		factory.setConcurrency(concurrency);
+		factory.setConcurrency(appProperties.mq().concurrency());
 		factory.setErrorHandler(errorHandler);
 		factory.setAutoStartup(autoStartup);
 		return factory;

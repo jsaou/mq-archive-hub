@@ -2,12 +2,12 @@ package com.bank.mq.archive.listener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
+import com.bank.mq.archive.config.AppProperties;
+import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.service.MqIngestService;
-import com.bank.mq.archive.service.PermanentIngestException;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,11 +29,10 @@ public class MqMessageListener {
 	public MqMessageListener(
 			MqIngestService ingestService,
 			MeterRegistry meterRegistry,
-			@Value("${app.mq.queue-name}") String queueName,
-			@Value("${app.mq.dlq-name}") String dlqName) {
+			AppProperties appProperties) {
 		this.ingestService = ingestService;
-		this.queueName = queueName;
-		this.dlqName = dlqName;
+		this.queueName = appProperties.mq().queueName();
+		this.dlqName = appProperties.mq().dlqName();
 		this.dlqCounter = meterRegistry.counter("mq.ingest.dlq");
 	}
 

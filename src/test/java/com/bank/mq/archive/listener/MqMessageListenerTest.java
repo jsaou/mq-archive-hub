@@ -17,8 +17,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.QueryTimeoutException;
 
+import com.bank.mq.archive.config.AppProperties;
+import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.service.MqIngestService;
-import com.bank.mq.archive.service.PermanentIngestException;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import jakarta.jms.JMSException;
@@ -45,7 +46,10 @@ class MqMessageListenerTest {
 	@BeforeEach
 	void setUp() {
 		meterRegistry = new SimpleMeterRegistry();
-		listener = new MqMessageListener(ingestService, meterRegistry, "DEV.QUEUE.1", "DEV.QUEUE.2");
+		AppProperties appProperties = new AppProperties(
+				new AppProperties.MqProperties("DEV.QUEUE.1", "DEV.QUEUE.2", "3-10"),
+				new AppProperties.ApiProperties("/api/v1", 20, 100));
+		listener = new MqMessageListener(ingestService, meterRegistry, appProperties);
 	}
 
 	@Test

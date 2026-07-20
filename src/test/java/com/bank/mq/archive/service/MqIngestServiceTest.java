@@ -17,8 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.QueryTimeoutException;
 
-import com.bank.mq.archive.domain.MessageStatus;
-import com.bank.mq.archive.domain.MqMessage;
+import com.bank.mq.archive.entity.MessageStatus;
+import com.bank.mq.archive.entity.MqMessage;
+import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.repository.MqMessageRepository;
 
 import io.micrometer.core.instrument.MeterRegistry;

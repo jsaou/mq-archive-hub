@@ -35,6 +35,7 @@ build/
 ### Env / local ###
 .env
 *.log
+mqjms.log*
 logs/
 
 ### Node (frontend) ###

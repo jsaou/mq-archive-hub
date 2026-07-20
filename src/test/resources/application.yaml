@@ -21,4 +21,8 @@ app:
     queue-name: DEV.QUEUE.1
     dlq-name: DEV.QUEUE.2
     concurrency: 1-1
+  api:
+    base-path: /api/v1
+    max-page-size: 100
+    default-page-size: 20
 

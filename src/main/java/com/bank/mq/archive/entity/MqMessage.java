@@ -1,4 +1,4 @@
-package com.bank.mq.archive.domain;
+package com.bank.mq.archive.entity;
 
 import java.time.Instant;
 import java.util.Objects;

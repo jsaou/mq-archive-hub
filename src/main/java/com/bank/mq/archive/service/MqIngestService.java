@@ -6,8 +6,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bank.mq.archive.dto.MqMessageDto;
+import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.repository.MqMessageRepository;
-import com.bank.mq.archive.web.dto.MqMessageDto;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -50,7 +51,7 @@ public class MqIngestService {
 		}
 
 		try {
-			MqMessageDto dto = new MqMessageDto(
+			MqMessageDto dto = MqMessageDto.forIngest(
 					messageId,
 					message.getJMSCorrelationID(),
 					queueName,

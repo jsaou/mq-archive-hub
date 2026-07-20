@@ -1,4 +1,4 @@
-package com.bank.mq.archive.domain;
+package com.bank.mq.archive.entity;
 
 public enum MessageStatus {
 	RECEIVED,

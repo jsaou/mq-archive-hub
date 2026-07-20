@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import com.bank.mq.archive.domain.MessageStatus;
-import com.bank.mq.archive.domain.MqMessage;
+import com.bank.mq.archive.entity.MessageStatus;
+import com.bank.mq.archive.entity.MqMessage;
 
 @DataJpaTest
 class MqMessageRepositoryTest {
