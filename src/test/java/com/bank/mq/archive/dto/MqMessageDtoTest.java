@@ -10,7 +10,7 @@ import com.bank.mq.archive.entity.MqMessage;
 class MqMessageDtoTest {
 
 	@Test
-	void forIngest_toEntity_mapsMqFieldsAndDefaultsArchiveMetadata() {
+	void forIngest_toEntity_mapsMqFieldsAndDefaultsStatusAndReceivedAt() {
 		MqMessageDto dto = MqMessageDto.forIngest("ID:1", "CORR:1", "DEV.QUEUE.1", "payload", "text/plain");
 
 		MqMessage entity = dto.toEntity();

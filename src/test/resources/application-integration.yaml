@@ -2,9 +2,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     show-sql: false
   flyway:
     enabled: true
+  jms:
+    listener:
+      auto-startup: false
 
 logging:
   level:

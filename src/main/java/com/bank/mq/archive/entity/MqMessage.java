@@ -11,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "mq_message")
@@ -39,6 +41,7 @@ public class MqMessage {
 	@Column(nullable = false, length = 20)
 	private MessageStatus status;
 
+	@JdbcTypeCode(SqlTypes.TIMESTAMP_WITH_TIMEZONE)
 	@Column(name = "received_at", nullable = false)
 	private Instant receivedAt;
 

@@ -61,6 +61,18 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 - `*Test` / `*Tests` → Surefire, H2 in-memory
 - `*IT` → Failsafe, real PostgreSQL via Testcontainers
 
+### Coverage
+
+| Class | Runner | Scope |
+|-------|--------|--------|
+| `MqMessageRepositoryTest` | Surefire (`@DataJpaTest`, H2) | Persistence, Specs filters, pagination, sort |
+| `MessageQueryControllerIT` | Failsafe (Postgres) | REST GET list/get, 200/404, pagination |
+| `MqIngestServiceIT` | Failsafe (Postgres) | Ingest success, duplicates, invalid messages not persisted |
+| `MqMessageListenerIT` | Failsafe (Postgres) | Listener → DB; poison messages parked on DLQ |
+| `ArchiveFlowIT` | Failsafe (Postgres) | E2E: simulated JMS → listener → DB → REST |
+
+IBM MQ broker container IT is left for a later phase (image `icr.io/ibm-messaging/mq`).
+
 ## REST API
 
 Base path: `http://localhost:8080/api/v1` (configurable via `API_BASE_PATH`)
