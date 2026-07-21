@@ -1,6 +1,17 @@
 # mq-archive-hub
 
-Archives IBM MQ messages into PostgreSQL and exposes them through a versioned REST API.
+Archives IBM MQ messages into PostgreSQL and exposes them through a versioned REST API (Angular UI forthcoming).
+
+## Structure
+
+```
+mq-archive-hub/
+├── backend/          # Spring Boot 4 (Java 21)
+├── frontend/         # Angular 22 (scaffold)
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
 
 ## Stack
 
@@ -9,11 +20,12 @@ Archives IBM MQ messages into PostgreSQL and exposes them through a versioned RE
 - IBM MQ (JMS)
 - Docker Compose (Postgres + MQ)
 - Micrometer + Prometheus
+- Angular 22 (scaffold; Material UI next)
 
 ## Prerequisites
 
 - JDK 21+
-- Maven (or `./mvnw`)
+- Maven (or `backend/mvnw`)
 - Docker
 
 ## Getting started
@@ -21,6 +33,7 @@ Archives IBM MQ messages into PostgreSQL and exposes them through a versioned RE
 ```bash
 cp .env.example .env
 docker compose up -d
+cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
@@ -51,6 +64,8 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 ## Tests
 
 ```bash
+cd backend
+
 # unit tests (H2, no Docker)
 ./mvnw test
 
