@@ -58,6 +58,8 @@ class ArchiveFlowIT extends AbstractIntegrationTest {
 		mockMvc.perform(get("/api/v1/messages").param("messageId", "ID:e2e-1"))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.page.totalElements").value(1))
-				.andExpect(jsonPath("$.content[0].id").value(id));
+				.andExpect(jsonPath("$.content[0].id").value(id))
+				.andExpect(jsonPath("$.content[0].contentType").value("application/json"))
+				.andExpect(jsonPath("$.content[0].payload").doesNotExist());
 	}
 }

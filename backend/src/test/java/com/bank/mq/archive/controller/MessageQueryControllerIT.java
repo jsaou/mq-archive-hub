@@ -37,6 +37,7 @@ class MessageQueryControllerIT extends AbstractIntegrationTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content.length()").value(2))
 				.andExpect(jsonPath("$.page.totalElements").value(3))
+				.andExpect(jsonPath("$.content[0].payload").doesNotExist())
 				.andExpect(jsonPath("$.content[0].queueName").doesNotExist());
 	}
 
@@ -68,6 +69,7 @@ class MessageQueryControllerIT extends AbstractIntegrationTest {
 				.andExpect(jsonPath("$.messageId").value("ID:1"))
 				.andExpect(jsonPath("$.correlationId").value("CORR:1"))
 				.andExpect(jsonPath("$.payload").value("payload"))
+				.andExpect(jsonPath("$.contentType").value("text/plain"))
 				.andExpect(jsonPath("$.status").value(MessageStatus.RECEIVED.name()))
 				.andExpect(jsonPath("$.queueName").doesNotExist());
 	}

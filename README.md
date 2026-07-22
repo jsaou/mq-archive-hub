@@ -115,7 +115,7 @@ Query parameters (all optional):
 GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=receivedAt,desc
 ```
 
-**Response (200):**
+**Response (200) — summary (no payload):**
 ```json
 {
   "content": [
@@ -123,7 +123,6 @@ GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=received
       "id": 1,
       "messageId": "ID:414d51...",
       "correlationId": null,
-      "payload": "...",
       "contentType": "text/plain",
       "status": "RECEIVED",
       "receivedAt": "2026-07-20T12:00:00Z"
@@ -138,10 +137,25 @@ GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=received
 }
 ```
 
+List responses intentionally omit `payload` to keep high-volume pages light. Use get-by-id for the full body.
+
 ### Get message by ID
 
 ```
 GET /api/v1/messages/{id}
+```
+
+**Response (200) — detail (includes payload):**
+```json
+{
+  "id": 1,
+  "messageId": "ID:414d51...",
+  "correlationId": null,
+  "payload": "...",
+  "contentType": "text/plain",
+  "status": "RECEIVED",
+  "receivedAt": "2026-07-20T12:00:00Z"
+}
 ```
 
 **Responses:**

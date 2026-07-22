@@ -25,8 +25,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
 import com.bank.mq.archive.config.AppProperties;
-import com.bank.mq.archive.dto.MqMessageDto;
+import com.bank.mq.archive.dto.MqMessageDetailDto;
 import com.bank.mq.archive.dto.MqMessageSearchCriteria;
+import com.bank.mq.archive.dto.MqMessageSummaryDto;
 import com.bank.mq.archive.entity.MessageStatus;
 import com.bank.mq.archive.entity.MqMessage;
 import com.bank.mq.archive.exception.MessageNotFoundException;
@@ -59,7 +60,7 @@ class MessageQueryServiceTest {
 
 		MqMessageSearchCriteria criteria = new MqMessageSearchCriteria(
 				"DEV.QUEUE.1", MessageStatus.RECEIVED, null, null);
-		Page<MqMessageDto> result = service.search(criteria, PageRequest.of(0, 500, Sort.by("id")));
+		Page<MqMessageSummaryDto> result = service.search(criteria, PageRequest.of(0, 500, Sort.by("id")));
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 		verify(repository).findAll(anySpec(), pageableCaptor.capture());
@@ -124,9 +125,10 @@ class MessageQueryServiceTest {
 		MqMessage entity = new MqMessage("ID:1", "CORR:1", "DEV.QUEUE.1", "payload", "text/plain");
 		when(repository.findById(1L)).thenReturn(Optional.of(entity));
 
-		MqMessageDto dto = service.getById(1L);
+		MqMessageDetailDto dto = service.getById(1L);
 
 		assertThat(dto.messageId()).isEqualTo("ID:1");
+		assertThat(dto.payload()).isEqualTo("payload");
 		assertThat(dto.status()).isEqualTo(MessageStatus.RECEIVED);
 	}
 

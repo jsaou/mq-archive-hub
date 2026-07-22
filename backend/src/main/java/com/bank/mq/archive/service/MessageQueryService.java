@@ -8,8 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.bank.mq.archive.config.AppProperties;
-import com.bank.mq.archive.dto.MqMessageDto;
+import com.bank.mq.archive.dto.MqMessageDetailDto;
 import com.bank.mq.archive.dto.MqMessageSearchCriteria;
+import com.bank.mq.archive.dto.MqMessageSummaryDto;
 import com.bank.mq.archive.exception.MessageNotFoundException;
 import com.bank.mq.archive.repository.MqMessageRepository;
 import com.bank.mq.archive.repository.MqMessageSpecs;
@@ -30,17 +31,17 @@ public class MessageQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<MqMessageDto> search(MqMessageSearchCriteria criteria, Pageable pageable) {
+	public Page<MqMessageSummaryDto> search(MqMessageSearchCriteria criteria, Pageable pageable) {
 		Pageable safePageable = clamp(pageable);
 		return repository
 				.findAll(MqMessageSpecs.withFilters(criteria), safePageable)
-				.map(MqMessageDto::from);
+				.map(MqMessageSummaryDto::from);
 	}
 
 	@Transactional(readOnly = true)
-	public MqMessageDto getById(Long id) {
+	public MqMessageDetailDto getById(Long id) {
 		return repository.findById(id)
-				.map(MqMessageDto::from)
+				.map(MqMessageDetailDto::from)
 				.orElseThrow(() -> new MessageNotFoundException(id));
 	}
 

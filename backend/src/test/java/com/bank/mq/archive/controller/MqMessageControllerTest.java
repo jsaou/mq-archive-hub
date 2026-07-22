@@ -21,11 +21,11 @@ import org.springframework.data.core.TypeInformation;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.bank.mq.archive.entity.MqMessage;
-
-import com.bank.mq.archive.dto.MqMessageDto;
+import com.bank.mq.archive.dto.MqMessageDetailDto;
 import com.bank.mq.archive.dto.MqMessageSearchCriteria;
+import com.bank.mq.archive.dto.MqMessageSummaryDto;
 import com.bank.mq.archive.entity.MessageStatus;
+import com.bank.mq.archive.entity.MqMessage;
 import com.bank.mq.archive.exception.MessageNotFoundException;
 import com.bank.mq.archive.service.MessageQueryService;
 
@@ -39,13 +39,11 @@ class MqMessageControllerTest {
 	private MessageQueryService queryService;
 
 	@Test
-	void list_returnsPage() throws Exception {
-		MqMessageDto dto = new MqMessageDto(
+	void list_returnsPageWithoutPayload() throws Exception {
+		MqMessageSummaryDto dto = new MqMessageSummaryDto(
 				1L,
 				"ID:1",
 				"CORR:1",
-				"DEV.QUEUE.1",
-				"payload",
 				"text/plain",
 				MessageStatus.RECEIVED,
 				Instant.parse("2026-07-19T10:00:00Z"));
@@ -56,7 +54,9 @@ class MqMessageControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.content[0].messageId").value("ID:1"))
 				.andExpect(jsonPath("$.content[0].status").value("RECEIVED"))
+				.andExpect(jsonPath("$.content[0].contentType").value("text/plain"))
 				.andExpect(jsonPath("$.page.totalElements").value(1))
+				.andExpect(jsonPath("$.content[0].payload").doesNotExist())
 				.andExpect(jsonPath("$.content[0].queueName").doesNotExist());
 	}
 
@@ -75,12 +75,11 @@ class MqMessageControllerTest {
 	}
 
 	@Test
-	void getById_returnsMessage() throws Exception {
-		MqMessageDto dto = new MqMessageDto(
+	void getById_returnsDetailWithPayload() throws Exception {
+		MqMessageDetailDto dto = new MqMessageDetailDto(
 				1L,
 				"ID:1",
 				null,
-				"DEV.QUEUE.1",
 				"payload",
 				null,
 				MessageStatus.RECEIVED,
@@ -91,6 +90,7 @@ class MqMessageControllerTest {
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(1))
 				.andExpect(jsonPath("$.messageId").value("ID:1"))
+				.andExpect(jsonPath("$.payload").value("payload"))
 				.andExpect(jsonPath("$.queueName").doesNotExist());
 	}
 

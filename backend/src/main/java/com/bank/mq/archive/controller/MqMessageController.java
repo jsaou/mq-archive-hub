@@ -24,7 +24,7 @@ public class MqMessageController {
 	}
 
 	@GetMapping
-	public Page<MqMessageResponse> list(
+	public Page<MqMessageSummaryResponse> list(
 			@RequestParam(required = false) String queueName,
 			@RequestParam(required = false) MessageStatus status,
 			@RequestParam(required = false) String messageId,
@@ -32,11 +32,11 @@ public class MqMessageController {
 			Pageable pageable) {
 		MqMessageSearchCriteria criteria = new MqMessageSearchCriteria(
 				queueName, status, messageId, correlationId);
-		return queryService.search(criteria, pageable).map(MqMessageResponse::from);
+		return queryService.search(criteria, pageable).map(MqMessageSummaryResponse::from);
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<MqMessageResponse> getById(@PathVariable Long id) {
-		return ResponseEntity.ok(MqMessageResponse.from(queryService.getById(id)));
+	public ResponseEntity<MqMessageDetailResponse> getById(@PathVariable Long id) {
+		return ResponseEntity.ok(MqMessageDetailResponse.from(queryService.getById(id)));
 	}
 }
