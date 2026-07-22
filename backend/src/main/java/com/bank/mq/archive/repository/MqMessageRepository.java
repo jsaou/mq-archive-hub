@@ -7,7 +7,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.bank.mq.archive.entity.MqMessage;
 
-public interface MqMessageRepository extends JpaRepository<MqMessage, Long>, JpaSpecificationExecutor<MqMessage> {
+public interface MqMessageRepository
+		extends JpaRepository<MqMessage, Long>, JpaSpecificationExecutor<MqMessage>, MqMessageRepositoryCustom {
 
 	Optional<MqMessage> findByMessageId(String messageId);
 

@@ -4,10 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
+import java.util.Locale;
+
+import jakarta.persistence.EntityManager;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,10 +19,14 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.bank.mq.archive.dto.MqMessageSearchCriteria;
+import com.bank.mq.archive.dto.MqMessageSummaryDto;
 import com.bank.mq.archive.entity.MessageStatus;
 import com.bank.mq.archive.entity.MqMessage;
+import com.bank.mq.archive.support.SqlCaptureTestConfig;
+import com.bank.mq.archive.support.SqlCaptureTestConfig.CapturingStatementInspector;
 
 @DataJpaTest
+@Import(SqlCaptureTestConfig.class)
 class MqMessageRepositoryTest {
 
 	private static final Instant OLDER = Instant.parse("2026-01-01T10:00:00Z");
@@ -26,6 +34,12 @@ class MqMessageRepositoryTest {
 
 	@Autowired
 	private MqMessageRepository repository;
+
+	@Autowired
+	private EntityManager entityManager;
+
+	@Autowired
+	private CapturingStatementInspector sqlCapture;
 
 	@Test
 	void save_andFindByMessageId() {
@@ -115,6 +129,67 @@ class MqMessageRepositoryTest {
 		assertThat(page.getTotalElements()).isEqualTo(2);
 		assertThat(page.getContent()).hasSize(1);
 		assertThat(page.getContent().getFirst().getMessageId()).isEqualTo("ID:new");
+	}
+
+	@Test
+	void findSummaries_projectsWithoutPayloadAndRespectsFilters() {
+		repository.saveAndFlush(new MqMessage("ID:1", "CORR:1", "Q.A", "payload-should-not-be-needed", "text/plain"));
+		repository.saveAndFlush(new MqMessage("ID:2", null, "Q.B", "other", null));
+
+		Page<MqMessageSummaryDto> page = repository.findSummaries(
+				MqMessageSpecs.withFilters(new MqMessageSearchCriteria("Q.A", null, null, null)),
+				PageRequest.of(0, 20, Sort.by(Sort.Direction.DESC, "receivedAt")));
+
+		assertThat(page.getTotalElements()).isEqualTo(1);
+		assertThat(page.getContent()).hasSize(1);
+		assertThat(page.getContent().getFirst().messageId()).isEqualTo("ID:1");
+		assertThat(page.getContent().getFirst().correlationId()).isEqualTo("CORR:1");
+		assertThat(page.getContent().getFirst().contentType()).isEqualTo("text/plain");
+		assertThat(page.getContent().getFirst().status()).isEqualTo(MessageStatus.RECEIVED);
+	}
+
+	@Test
+	void findSummaries_paginatesFilteredResults() {
+		repository.saveAndFlush(messageAt("ID:old", "old-payload", OLDER));
+		repository.saveAndFlush(messageAt("ID:new", "new-payload", NEWER));
+		repository.saveAndFlush(new MqMessage("ID:other", null, "Q.B", "ignored", null));
+
+		Page<MqMessageSummaryDto> page = repository.findSummaries(
+				MqMessageSpecs.withFilters(new MqMessageSearchCriteria("Q.A", null, null, null)),
+				PageRequest.of(0, 1, Sort.by(Sort.Direction.DESC, "receivedAt")));
+
+		assertThat(page.getTotalElements()).isEqualTo(2);
+		assertThat(page.getTotalPages()).isEqualTo(2);
+		assertThat(page.getContent()).hasSize(1);
+		assertThat(page.getContent().getFirst().messageId()).isEqualTo("ID:new");
+
+		Page<MqMessageSummaryDto> secondPage = repository.findSummaries(
+				MqMessageSpecs.withFilters(new MqMessageSearchCriteria("Q.A", null, null, null)),
+				PageRequest.of(1, 1, Sort.by(Sort.Direction.DESC, "receivedAt")));
+
+		assertThat(secondPage.getContent()).hasSize(1);
+		assertThat(secondPage.getContent().getFirst().messageId()).isEqualTo("ID:old");
+	}
+
+	@Test
+	void findSummaries_generatedSqlOmitsPayloadColumn() {
+		repository.saveAndFlush(new MqMessage("ID:1", "CORR:1", "Q.A", "secret-payload-body", "text/plain"));
+		entityManager.flush();
+		entityManager.clear();
+		sqlCapture.clear();
+
+		Page<MqMessageSummaryDto> page = repository.findSummaries(
+				MqMessageSpecs.withFilters(new MqMessageSearchCriteria("Q.A", MessageStatus.RECEIVED, "ID:1", "CORR:1")),
+				PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "receivedAt")));
+
+		assertThat(page.getTotalElements()).isEqualTo(1);
+		assertThat(page.getContent()).hasSize(1);
+		assertThat(sqlCapture.selectStatements()).isNotEmpty();
+		for (String sql : sqlCapture.selectStatements()) {
+			assertThat(sql.toLowerCase(Locale.ROOT))
+					.as("summary SELECT must not load payload: %s", sql)
+					.doesNotContain("payload");
+		}
 	}
 
 	private static MqMessage messageAt(String messageId, String payload, Instant receivedAt) {

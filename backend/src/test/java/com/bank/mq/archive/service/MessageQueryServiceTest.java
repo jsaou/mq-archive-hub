@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -53,17 +55,23 @@ class MessageQueryServiceTest {
 	}
 
 	@Test
-	void search_mapsPageAndClampsPageSize() {
-		MqMessage entity = new MqMessage("ID:1", null, "DEV.QUEUE.1", "payload", null);
-		when(repository.findAll(anySpec(), any(Pageable.class)))
-				.thenReturn(new PageImpl<>(List.of(entity)));
+	void search_usesSummaryProjectionAndClampsPageSize() {
+		MqMessageSummaryDto summary = new MqMessageSummaryDto(
+				1L,
+				"ID:1",
+				null,
+				null,
+				MessageStatus.RECEIVED,
+				Instant.parse("2026-07-19T10:00:00Z"));
+		when(repository.findSummaries(anySpec(), any(Pageable.class)))
+				.thenReturn(new PageImpl<>(List.of(summary)));
 
 		MqMessageSearchCriteria criteria = new MqMessageSearchCriteria(
 				"DEV.QUEUE.1", MessageStatus.RECEIVED, null, null);
 		Page<MqMessageSummaryDto> result = service.search(criteria, PageRequest.of(0, 500, Sort.by("id")));
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(repository).findAll(anySpec(), pageableCaptor.capture());
+		verify(repository).findSummaries(anySpec(), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(MAX_PAGE_SIZE);
 		assertThat(result.getContent()).hasSize(1);
 		assertThat(result.getContent().getFirst().messageId()).isEqualTo("ID:1");
@@ -71,13 +79,13 @@ class MessageQueryServiceTest {
 
 	@Test
 	void search_usesDefaultsWhenPageableNull() {
-		when(repository.findAll(anySpec(), any(Pageable.class)))
+		when(repository.findSummaries(anySpec(), any(Pageable.class)))
 				.thenReturn(Page.empty());
 
 		service.search(new MqMessageSearchCriteria(null, null, null, null), null);
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(repository).findAll(anySpec(), pageableCaptor.capture());
+		verify(repository).findSummaries(anySpec(), pageableCaptor.capture());
 		Pageable used = pageableCaptor.getValue();
 		assertThat(used.getPageNumber()).isZero();
 		assertThat(used.getPageSize()).isEqualTo(DEFAULT_PAGE_SIZE);
@@ -89,7 +97,7 @@ class MessageQueryServiceTest {
 
 	@Test
 	void search_rejectsNegativePageNumber() {
-		when(repository.findAll(anySpec(), any(Pageable.class)))
+		when(repository.findSummaries(anySpec(), any(Pageable.class)))
 				.thenReturn(Page.empty());
 
 		Pageable negativePage = org.mockito.Mockito.mock(Pageable.class);
@@ -101,23 +109,34 @@ class MessageQueryServiceTest {
 		service.search(new MqMessageSearchCriteria(null, null, null, null), negativePage);
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(repository).findAll(anySpec(), pageableCaptor.capture());
+		verify(repository).findSummaries(anySpec(), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getPageNumber()).isZero();
 	}
 
 	@Test
 	void search_appliesDefaultSortWhenUnsorted() {
-		when(repository.findAll(anySpec(), any(Pageable.class)))
+		when(repository.findSummaries(anySpec(), any(Pageable.class)))
 				.thenReturn(Page.empty());
 
 		service.search(new MqMessageSearchCriteria(null, null, null, null), PageRequest.of(0, 20));
 
 		ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-		verify(repository).findAll(anySpec(), pageableCaptor.capture());
+		verify(repository).findSummaries(anySpec(), pageableCaptor.capture());
 		assertThat(pageableCaptor.getValue().getSort().getOrderFor("receivedAt"))
 				.isNotNull()
 				.extracting(Sort.Order::getDirection)
 				.isEqualTo(Sort.Direction.DESC);
+	}
+
+	@Test
+	void search_rejectsDisallowedSortProperty() {
+		assertThatThrownBy(() ->
+				service.search(
+						new MqMessageSearchCriteria(null, null, null, null),
+						PageRequest.of(0, 20, Sort.by("payload"))))
+				.isInstanceOf(PropertyReferenceException.class)
+				.extracting(ex -> ((PropertyReferenceException) ex).getPropertyName())
+				.isEqualTo("payload");
 	}
 
 	@Test

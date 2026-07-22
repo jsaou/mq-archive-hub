@@ -33,12 +33,24 @@ class MessageQueryControllerIT extends AbstractIntegrationTest {
 		repository.saveAndFlush(new MqMessage("ID:2", "CORR:2", "DEV.QUEUE.1", "payload-2", "text/plain"));
 		repository.saveAndFlush(new MqMessage("ID:3", null, "OTHER.QUEUE", "payload-3", null));
 
-		mockMvc.perform(get("/api/v1/messages").param("size", "2").param("page", "0"))
+		mockMvc.perform(get("/api/v1/messages").param("size", "10").param("page", "0"))
 				.andExpect(status().isOk())
-				.andExpect(jsonPath("$.content.length()").value(2))
+				.andExpect(jsonPath("$.content.length()").value(3))
 				.andExpect(jsonPath("$.page.totalElements").value(3))
+				.andExpect(jsonPath("$.content[0].id").exists())
+				.andExpect(jsonPath("$.content[0].messageId").exists())
+				.andExpect(jsonPath("$.content[0].status").exists())
+				.andExpect(jsonPath("$.content[0].receivedAt").exists())
+				.andExpect(jsonPath("$.content[?(@.messageId=='ID:1')].contentType").value("text/plain"))
 				.andExpect(jsonPath("$.content[0].payload").doesNotExist())
 				.andExpect(jsonPath("$.content[0].queueName").doesNotExist());
+	}
+
+	@Test
+	void list_rejectsUnknownSortProperty() throws Exception {
+		mockMvc.perform(get("/api/v1/messages").param("sort", "payload,desc"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.detail").value("Invalid sort property: payload"));
 	}
 
 	@Test

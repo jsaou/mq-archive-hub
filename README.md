@@ -137,7 +137,7 @@ GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=received
 }
 ```
 
-List responses intentionally omit `payload` to keep high-volume pages light. Use get-by-id for the full body.
+List responses intentionally omit `payload` (and the DB query uses a summary projection that does not select the payload column). Use get-by-id for the full body.
 
 ### Get message by ID
 

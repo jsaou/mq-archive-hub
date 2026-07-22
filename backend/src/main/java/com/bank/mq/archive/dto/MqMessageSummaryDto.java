@@ -7,6 +7,9 @@ import com.bank.mq.archive.entity.MqMessage;
 
 /**
  * List/search projection without payload — keeps high-volume list responses light.
+ *
+ * <p>Constructor argument order must stay aligned with
+ * {@code MqMessageRepositoryImpl} {@code CriteriaBuilder.construct(...)} selection.
  */
 public record MqMessageSummaryDto(
 		Long id,
