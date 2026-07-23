@@ -29,6 +29,35 @@ services:
     volumes:
       - mq-data:/mnt/mqm
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mqhub-backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mq:
+        condition: service_started
+    ports:
+      - "${API_PORT:-8080}:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-mqarchive}
+      DB_USERNAME: ${DB_USERNAME:-mqarchive}
+      DB_PASSWORD: ${DB_PASSWORD:-mqarchive}
+      MQ_QUEUE_MANAGER: ${MQ_QUEUE_MANAGER:-QM1}
+      MQ_CHANNEL: ${MQ_CHANNEL:-DEV.APP.SVRCONN}
+      MQ_CONN_NAME: mq(1414)
+      MQ_USER: ${MQ_USER:-app}
+      MQ_PASSWORD: ${MQ_PASSWORD:-passw0rd}
+      MQ_QUEUE_NAME: ${MQ_QUEUE_NAME:-DEV.QUEUE.1}
+      MQ_DLQ_NAME: ${MQ_DLQ_NAME:-DEV.QUEUE.2}
+      MQ_CONCURRENCY: ${MQ_CONCURRENCY:-3-10}
+      API_BASE_PATH: ${API_BASE_PATH:-/api/v1}
+      API_MAX_PAGE_SIZE: ${API_MAX_PAGE_SIZE:-100}
+      API_DEFAULT_PAGE_SIZE: ${API_DEFAULT_PAGE_SIZE:-20}
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   mq-data:

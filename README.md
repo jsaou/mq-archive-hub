@@ -6,7 +6,7 @@ Archives IBM MQ messages into PostgreSQL and exposes them through a versioned RE
 
 ```
 mq-archive-hub/
-├── backend/          # Spring Boot 4 (Java 21)
+├── backend/          # Spring Boot 4 (Java 21) + Dockerfile
 ├── frontend/         # Angular 22 + Material (list UI)
 ├── docker-compose.yml
 ├── .env.example
@@ -18,30 +18,36 @@ mq-archive-hub/
 - Java 21, Spring Boot 4
 - PostgreSQL + Flyway
 - IBM MQ (JMS)
-- Docker Compose (Postgres + MQ)
+- Docker Compose (Postgres + MQ + backend)
 - Micrometer + Prometheus
 - Angular 22, Angular Material, Signal Forms, Vitest
 
 ## Prerequisites
 
-- JDK 21+
-- Maven (or `backend/mvnw`)
+- JDK 21+ (only if running the API outside Docker)
+- Maven (or `backend/mvnw`) — only if running the API outside Docker
 - Node.js 20+ and npm
 - Docker
 
 ## Getting started
 
-### Infrastructure + API
+### Full stack (infra + API in Docker)
 
 ```bash
 cp .env.example .env
-docker compose up -d
-cd backend
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+docker compose up -d --build
 ```
 
 - API: `http://localhost:8080`
 - MQ console: `https://localhost:9443`
+
+Infra only (Postgres + MQ), then run the API locally:
+
+```bash
+docker compose up -d postgres mq
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
 ### Angular UI
 
@@ -61,9 +67,9 @@ Dev proxy: `/api` → `http://localhost:8080` (`frontend/proxy.conf.json`)
 | Route | Status |
 |-------|--------|
 | `/messages` | List with filters, pagination, status chips |
-| `/messages/:id` | Placeholder (detail + payload next) |
+| `/messages/:id` | Detail with metadata + payload |
 
-Default list sort from the UI: `id,asc`.
+Default list sort from the UI: `receivedAt,desc` (aligned with the API default).
 
 ## Configuration
 
@@ -82,6 +88,7 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 | `MQ_QUEUE_NAME` | `DEV.QUEUE.1` | Source queue |
 | `MQ_DLQ_NAME` | `DEV.QUEUE.2` | Dead-letter queue |
 | `MQ_CONCURRENCY` | `3-10` | Listener thread range |
+| `API_PORT` | `8080` | Host port for the API container |
 | `API_BASE_PATH` | `/api/v1` | API version prefix |
 | `API_MAX_PAGE_SIZE` | `100` | Maximum page size |
 | `API_DEFAULT_PAGE_SIZE` | `20` | Default page size |
@@ -125,8 +132,9 @@ Vitest + jsdom (`@angular/build:unit-test`):
 | Spec | Scope |
 |------|--------|
 | `app.spec.ts` | App shell |
-| `message-api.spec.ts` | List request URL / query params |
+| `message-api.spec.ts` | List/detail request builders |
 | `message-list-page.spec.ts` | List page render, empty/error HTTP states |
+| `message-detail-page.spec.ts` | Detail page load + 404 |
 
 ## REST API
 
@@ -143,7 +151,7 @@ Query parameters (all optional):
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `queueName` | string | Filter by source queue name |
-| `status` | enum | `RECEIVED`, `PROCESSED`, `ERROR`, `DLQ` |
+| `status` | enum | `RECEIVED` (archived OK), `ERROR` (invalid but archived), `DLQ` (poison — archived + parked on MQ DLQ) |
 | `messageId` | string | Exact match on JMSMessageID |
 | `correlationId` | string | Exact match on JMSCorrelationID |
 | `page` | int | Page number, 0-based (default: 0) |
