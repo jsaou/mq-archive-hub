@@ -1,0 +1,115 @@
+.list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 72rem;
+}
+
+.list-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+h1 {
+  margin: 0;
+  font: var(--mat-sys-headline-small);
+}
+
+.list-page__subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.list-page__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.5rem 0.75rem;
+  align-items: start;
+
+  // Keep density mild so mat-select overlay positioning stays accurate.
+  mat-form-field {
+    width: 100%;
+    font-size: 0.875rem;
+    --mat-form-field-container-height: 2.75rem;
+    --mat-form-field-container-vertical-padding: 0.625rem;
+  }
+}
+
+.list-page__loading {
+  border-radius: 0.25rem;
+}
+
+.list-page__state {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.list-page__state--error {
+  border-color: color-mix(in srgb, var(--mat-sys-error) 45%, var(--mat-sys-outline-variant));
+  background: color-mix(in srgb, var(--mat-sys-error-container) 70%, white);
+  color: var(--mat-sys-on-error-container);
+}
+
+.table-wrap {
+  overflow: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.5rem;
+}
+
+.messages-table {
+  width: 100%;
+}
+
+.messages-table__row {
+  cursor: pointer;
+}
+
+.messages-table__row:hover {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.status {
+  font: var(--mat-sys-label-medium);
+  min-height: 1.75rem;
+  pointer-events: none;
+}
+
+.status--received {
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+  --mat-chip-outline-color: var(--mat-sys-outline-variant);
+  --mat-chip-elevated-container-color: var(--mat-sys-surface-container);
+}
+
+.status--processed {
+  --mat-chip-label-text-color: #1b5e20;
+  --mat-chip-outline-color: #a5d6a7;
+  --mat-chip-elevated-container-color: #e8f5e9;
+}
+
+.status--error {
+  --mat-chip-label-text-color: #b71c1c;
+  --mat-chip-outline-color: #ef9a9a;
+  --mat-chip-elevated-container-color: #ffebee;
+}
+
+.status--dlq {
+  --mat-chip-label-text-color: #ffffff;
+  --mat-chip-outline-color: #b71c1c;
+  --mat-chip-elevated-container-color: #c62828;
+  font-weight: 600;
+}

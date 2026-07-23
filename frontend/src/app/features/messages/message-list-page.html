@@ -1,0 +1,110 @@
+<section class="list-page">
+  <header class="list-page__header">
+    <div>
+      <h1>Archived messages</h1>
+      <p class="list-page__subtitle">Browse and filter IBM MQ messages stored in the archive.</p>
+    </div>
+    <div class="list-page__actions">
+      <button matButton type="button" (click)="resetFilters()">Reset</button>
+      <button matButton="filled" type="button" (click)="reload()">Refresh</button>
+    </div>
+  </header>
+
+  <form class="filters" (submit)="$event.preventDefault()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Queue name</mat-label>
+      <input matInput [formField]="filtersForm.queueName" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Status</mat-label>
+      <select matNativeControl [formField]="filtersForm.status">
+        <option value="">All</option>
+        @for (status of statuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Message ID</mat-label>
+      <input matInput [formField]="filtersForm.messageId" autocomplete="off" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Correlation ID</mat-label>
+      <input matInput [formField]="filtersForm.correlationId" autocomplete="off" />
+    </mat-form-field>
+  </form>
+
+  @if (messages.isLoading()) {
+    <mat-progress-bar mode="indeterminate" class="list-page__loading" />
+  }
+
+  @if (messages.error(); as error) {
+    <div class="list-page__state list-page__state--error" role="alert">
+      Failed to load messages. {{ error.message || 'Please try again.' }}
+    </div>
+  }
+
+  @if (showEmpty()) {
+    <div class="list-page__state">No messages match the current filters.</div>
+  }
+
+  @if (rows().length > 0) {
+    <div class="table-wrap">
+      <table mat-table [dataSource]="rows()" class="messages-table">
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef>ID</th>
+          <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="messageId">
+          <th mat-header-cell *matHeaderCellDef>Message ID</th>
+          <td mat-cell *matCellDef="let row" class="mono">{{ row.messageId }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="correlationId">
+          <th mat-header-cell *matHeaderCellDef>Correlation ID</th>
+          <td mat-cell *matCellDef="let row" class="mono">{{ row.correlationId || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="contentType">
+          <th mat-header-cell *matHeaderCellDef>Content type</th>
+          <td mat-cell *matCellDef="let row" class="mono">{{ row.contentType || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-chip [class]="statusClass(row.status)">{{ row.status }}</mat-chip>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="receivedAt">
+          <th mat-header-cell *matHeaderCellDef>Received at</th>
+          <td mat-cell *matCellDef="let row">
+            {{ row.receivedAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }} UTC
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          [routerLink]="['/messages', row.id]"
+          class="messages-table__row"
+        ></tr>
+      </table>
+    </div>
+
+    <mat-paginator
+      [length]="totalElements()"
+      [pageIndex]="pageIndex()"
+      [pageSize]="pageSize()"
+      [pageSizeOptions]="[10, 20, 50]"
+      [showFirstLastButtons]="true"
+      (page)="onPage($event)"
+    />
+  }
+</section>

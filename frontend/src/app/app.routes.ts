@@ -1,8 +1,11 @@
 import { Routes } from '@angular/router';
 
-import { HomePage } from './features/home/home-page';
+import { MessageDetailPage } from './features/messages/message-detail-page';
+import { MessageListPage } from './features/messages/message-list-page';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', component: HomePage },
-  { path: '**', redirectTo: '' },
+  { path: '', pathMatch: 'full', redirectTo: 'messages' },
+  { path: 'messages', component: MessageListPage },
+  { path: 'messages/:id', component: MessageDetailPage },
+  { path: '**', redirectTo: 'messages' },
 ];

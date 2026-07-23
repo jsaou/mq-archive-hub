@@ -1,13 +1,13 @@
 # mq-archive-hub
 
-Archives IBM MQ messages into PostgreSQL and exposes them through a versioned REST API (Angular UI forthcoming).
+Archives IBM MQ messages into PostgreSQL and exposes them through a versioned REST API and an Angular consultation UI.
 
 ## Structure
 
 ```
 mq-archive-hub/
 ├── backend/          # Spring Boot 4 (Java 21)
-├── frontend/         # Angular 22 (scaffold)
+├── frontend/         # Angular 22 + Material (list UI)
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -20,15 +20,18 @@ mq-archive-hub/
 - IBM MQ (JMS)
 - Docker Compose (Postgres + MQ)
 - Micrometer + Prometheus
-- Angular 22 (scaffold; Material UI next)
+- Angular 22, Angular Material, Signal Forms, Vitest
 
 ## Prerequisites
 
 - JDK 21+
 - Maven (or `backend/mvnw`)
+- Node.js 20+ and npm
 - Docker
 
 ## Getting started
+
+### Infrastructure + API
 
 ```bash
 cp .env.example .env
@@ -37,8 +40,30 @@ cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-App: `http://localhost:8080`  
-MQ console: `https://localhost:9443`
+- API: `http://localhost:8080`
+- MQ console: `https://localhost:9443`
+
+### Angular UI
+
+With the API already running:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+UI: `http://localhost:4200`  
+Dev proxy: `/api` → `http://localhost:8080` (`frontend/proxy.conf.json`)
+
+**UI status**
+
+| Route | Status |
+|-------|--------|
+| `/messages` | List with filters, pagination, status chips |
+| `/messages/:id` | Placeholder (detail + payload next) |
+
+Default list sort from the UI: `id,asc`.
 
 ## Configuration
 
@@ -63,6 +88,8 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 
 ## Tests
 
+### Backend
+
 ```bash
 cd backend
 
@@ -76,8 +103,6 @@ cd backend
 - `*Test` / `*Tests` → Surefire, H2 in-memory
 - `*IT` → Failsafe, real PostgreSQL via Testcontainers
 
-### Coverage
-
 | Class | Runner | Scope |
 |-------|--------|--------|
 | `MqMessageRepositoryTest` | Surefire (`@DataJpaTest`, H2) | Persistence, Specs filters, pagination, sort |
@@ -87,6 +112,21 @@ cd backend
 | `ArchiveFlowIT` | Failsafe (Postgres) | E2E: simulated JMS → listener → DB → REST |
 
 IBM MQ broker container IT is left for a later phase (image `icr.io/ibm-messaging/mq`).
+
+### Frontend
+
+```bash
+cd frontend
+npm test -- --watch=false
+```
+
+Vitest + jsdom (`@angular/build:unit-test`):
+
+| Spec | Scope |
+|------|--------|
+| `app.spec.ts` | App shell |
+| `message-api.spec.ts` | List request URL / query params |
+| `message-list-page.spec.ts` | List page render, empty/error HTTP states |
 
 ## REST API
 
@@ -108,11 +148,13 @@ Query parameters (all optional):
 | `correlationId` | string | Exact match on JMSCorrelationID |
 | `page` | int | Page number, 0-based (default: 0) |
 | `size` | int | Page size (default: 20, max: 100) |
-| `sort` | string | Sort field and direction, e.g. `receivedAt,desc` |
+| `sort` | string | Sort field and direction, e.g. `id,asc` or `receivedAt,desc` |
+
+Allowed sort fields: `id`, `messageId`, `correlationId`, `contentType`, `status`, `receivedAt`. Default (API): `receivedAt,desc` when `sort` is omitted.
 
 **Example:**
 ```
-GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=receivedAt,desc
+GET /api/v1/messages?queueName=DEV.QUEUE.1&status=RECEIVED&size=10&sort=id,asc
 ```
 
 **Response (200) — summary (no payload):**
