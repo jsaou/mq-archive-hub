@@ -77,7 +77,7 @@ describe('MessageListPage', () => {
       fixture.nativeElement.querySelectorAll('select[matNativeControl] option'),
     ).map((option) => (option as HTMLOptionElement).textContent?.trim());
 
-    expect(options).toEqual(['All', 'RECEIVED', 'PROCESSED', 'ERROR', 'DLQ']);
+    expect(options).toEqual(['All', 'RECEIVED', 'ERROR', 'DLQ']);
   });
 
   it('loads messages into the table', async () => {
@@ -117,5 +117,21 @@ describe('MessageListPage', () => {
 
     const alert = fixture.nativeElement.querySelector('[role="alert"]');
     expect(alert?.textContent).toContain('Failed to load messages');
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
+  });
+
+  it('shows a clear message when the API is unreachable', async () => {
+    const fixture = createFixture();
+    const req = httpMock.expectOne(
+      (request) => request.method === 'GET' && request.url === '/api/v1/messages',
+    );
+    req.error(new ProgressEvent('error'));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const alert = fixture.nativeElement.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain('Cannot reach the API');
+    expect(fixture.nativeElement.querySelector('table')).toBeNull();
   });
 });

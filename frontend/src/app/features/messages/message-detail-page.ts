@@ -7,6 +7,7 @@ import { MatChip } from '@angular/material/chips';
 import { MatProgressBar } from '@angular/material/progress-bar';
 
 import { buildMessageDetailRequest } from './message-api';
+import { describeHttpLoadError } from './http-load-error';
 import { MqMessageDetail, statusChipClass } from './message.model';
 
 @Component({
@@ -33,6 +34,10 @@ export class MessageDetailPage {
 
   protected reload(): void {
     this.message.reload();
+  }
+
+  protected loadErrorMessage(error: unknown): string {
+    return describeHttpLoadError(error, 'Please try again.');
   }
 
   protected statusClass = statusChipClass;

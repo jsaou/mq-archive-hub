@@ -1,4 +1,4 @@
-<section class="list-page">
+<section class="list-page" data-testid="message-list-page">
   <header class="list-page__header">
     <div>
       <h1>Archived messages</h1>
@@ -43,15 +43,11 @@
 
   @if (messages.error(); as error) {
     <div class="list-page__state list-page__state--error" role="alert">
-      Failed to load messages. {{ error.message || 'Please try again.' }}
+      Failed to load messages. {{ loadErrorMessage(error) }}
     </div>
-  }
-
-  @if (showEmpty()) {
+  } @else if (showEmpty()) {
     <div class="list-page__state">No messages match the current filters.</div>
-  }
-
-  @if (rows().length > 0) {
+  } @else if (rows().length > 0) {
     <div class="table-wrap">
       <table mat-table [dataSource]="rows()" class="messages-table">
         <ng-container matColumnDef="id">
@@ -94,6 +90,7 @@
           *matRowDef="let row; columns: displayedColumns"
           [routerLink]="['/messages', row.id]"
           class="messages-table__row"
+          [attr.data-testid]="'message-row-' + row.id"
         ></tr>
       </table>
     </div>

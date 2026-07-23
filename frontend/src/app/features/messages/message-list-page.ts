@@ -12,11 +12,12 @@ import { MatProgressBar } from '@angular/material/progress-bar';
 import { MatChip } from '@angular/material/chips';
 
 import { buildMessagesListRequest } from './message-api';
+import { describeHttpLoadError } from './http-load-error';
 import {
   EMPTY_MESSAGE_FILTERS,
   MessagePage,
   MESSAGE_STATUSES,
-  MessageStatus,
+  statusChipClass,
 } from './message.model';
 
 @Component({
@@ -90,7 +91,9 @@ export class MessageListPage {
     this.messages.reload();
   }
 
-  protected statusClass(status: MessageStatus): string {
-    return `status status--${status.toLowerCase()}`;
+  protected loadErrorMessage(error: unknown): string {
+    return describeHttpLoadError(error, 'Please try again.');
   }
+
+  protected statusClass = statusChipClass;
 }

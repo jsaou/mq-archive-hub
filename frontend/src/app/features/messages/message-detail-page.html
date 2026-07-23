@@ -21,11 +21,9 @@
     </div>
   } @else if (message.error(); as error) {
     <div class="detail-page__state detail-page__state--error" role="alert">
-      Failed to load message. {{ error.message || 'Please try again.' }}
+      Failed to load message. {{ loadErrorMessage(error) }}
     </div>
-  }
-
-  @if (detail(); as row) {
+  } @else if (detail(); as row) {
     <dl class="meta">
       <div class="meta__item">
         <dt>ID</dt>

@@ -11,7 +11,7 @@ const SAMPLE_DETAIL: MqMessageDetail = {
   messageId: 'ID:abc',
   correlationId: 'CORR:1',
   contentType: 'text/plain',
-  status: 'PROCESSED',
+  status: 'RECEIVED',
   receivedAt: '2026-07-21T10:00:00Z',
   payload: '{"amount":100}',
 };
@@ -58,7 +58,7 @@ describe('MessageDetailPage', () => {
 
     const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
     expect(text).toContain('ID:abc');
-    expect(text).toContain('PROCESSED');
+    expect(text).toContain('RECEIVED');
     expect(text).toContain('{"amount":100}');
   });
 

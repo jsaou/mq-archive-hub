@@ -1,3 +1,5 @@
+@use './status-chip';
+
 .list-page {
   display: flex;
   flex-direction: column;
@@ -81,35 +83,4 @@ h1 {
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.85rem;
-}
-
-.status {
-  font: var(--mat-sys-label-medium);
-  min-height: 1.75rem;
-  pointer-events: none;
-}
-
-.status--received {
-  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
-  --mat-chip-outline-color: var(--mat-sys-outline-variant);
-  --mat-chip-elevated-container-color: var(--mat-sys-surface-container);
-}
-
-.status--processed {
-  --mat-chip-label-text-color: #1b5e20;
-  --mat-chip-outline-color: #a5d6a7;
-  --mat-chip-elevated-container-color: #e8f5e9;
-}
-
-.status--error {
-  --mat-chip-label-text-color: #b71c1c;
-  --mat-chip-outline-color: #ef9a9a;
-  --mat-chip-elevated-container-color: #ffebee;
-}
-
-.status--dlq {
-  --mat-chip-label-text-color: #ffffff;
-  --mat-chip-outline-color: #b71c1c;
-  --mat-chip-elevated-container-color: #c62828;
-  font-weight: 600;
 }

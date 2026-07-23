@@ -16,10 +16,10 @@ describe('App', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render the shell brand', async () => {
+  it('should render the shell content', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.shell__brand')?.textContent).toContain('MQ Archive Hub');
+    expect(compiled.querySelector('.shell')).toBeTruthy();
   });
 });

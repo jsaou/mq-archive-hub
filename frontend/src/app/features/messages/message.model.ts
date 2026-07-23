@@ -1,4 +1,4 @@
-export type MessageStatus = 'RECEIVED' | 'PROCESSED' | 'ERROR' | 'DLQ';
+export type MessageStatus = 'RECEIVED' | 'ERROR' | 'DLQ';
 
 /** List item — no payload (loaded only on detail). */
 export interface MqMessageSummary {
@@ -34,12 +34,7 @@ export interface MessageSearchFilters {
   correlationId: string;
 }
 
-export const MESSAGE_STATUSES: readonly MessageStatus[] = [
-  'RECEIVED',
-  'PROCESSED',
-  'ERROR',
-  'DLQ',
-] as const;
+export const MESSAGE_STATUSES: readonly MessageStatus[] = ['RECEIVED', 'ERROR', 'DLQ'] as const;
 
 export const EMPTY_MESSAGE_FILTERS: MessageSearchFilters = {
   queueName: '',
