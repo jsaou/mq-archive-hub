@@ -1,14 +1,12 @@
 package com.bank.mq.archive.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.bank.mq.archive.entity.MessageStatus;
-import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.repository.MqMessageRepository;
 import com.bank.mq.archive.support.AbstractIntegrationTest;
 import com.bank.mq.archive.support.JmsTestMessages;
@@ -32,7 +30,7 @@ class MqIngestServiceIT extends AbstractIntegrationTest {
 	void ingest_persistsValidTextMessage() throws Exception {
 		TextMessage message = JmsTestMessages.textMessage("ID:1", "CORR:1", "hello", "text/plain");
 
-		ingestService.ingest(message, "DEV.QUEUE.1");
+		assertThat(ingestService.ingest(message, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.SUCCESS);
 
 		assertThat(repository.findByMessageId("ID:1")).hasValueSatisfying(saved -> {
 			assertThat(saved.getCorrelationId()).isEqualTo("CORR:1");
@@ -49,7 +47,7 @@ class MqIngestServiceIT extends AbstractIntegrationTest {
 		TextMessage duplicate = JmsTestMessages.textMessage("ID:1", null, "second", null);
 
 		ingestService.ingest(first, "DEV.QUEUE.1");
-		ingestService.ingest(duplicate, "DEV.QUEUE.1");
+		assertThat(ingestService.ingest(duplicate, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DUPLICATE);
 
 		assertThat(repository.count()).isEqualTo(1);
 		assertThat(repository.findByMessageId("ID:1")).hasValueSatisfying(saved ->
@@ -57,33 +55,39 @@ class MqIngestServiceIT extends AbstractIntegrationTest {
 	}
 
 	@Test
-	void ingest_rejectsBlankMessageIdWithoutPersisting() throws Exception {
+	void ingest_archivesBlankMessageIdAsDlq() throws Exception {
 		TextMessage message = JmsTestMessages.textMessage(" ", null, "payload", null);
 
-		assertThatThrownBy(() -> ingestService.ingest(message, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("JMSMessageID");
+		assertThat(ingestService.ingest(message, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
 
-		assertThat(repository.count()).isZero();
+		assertThat(repository.count()).isEqualTo(1);
+		assertThat(repository.findAll().getFirst()).satisfies(saved -> {
+			assertThat(saved.getMessageId()).startsWith("MISSING:");
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+			assertThat(saved.getPayload()).contains("missing JMSMessageID");
+		});
 	}
 
 	@Test
-	void ingest_rejectsNullPayloadWithoutPersisting() throws Exception {
+	void ingest_archivesNullPayloadAsError() throws Exception {
 		TextMessage message = JmsTestMessages.textMessage("ID:1", null, null, null);
 
-		assertThatThrownBy(() -> ingestService.ingest(message, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("payload is null");
+		assertThat(ingestService.ingest(message, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.ERROR);
 
-		assertThat(repository.count()).isZero();
+		assertThat(repository.findByMessageId("ID:1")).hasValueSatisfying(saved -> {
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.ERROR);
+			assertThat(saved.getPayload()).contains("payload is null");
+		});
 	}
 
 	@Test
-	void ingest_rejectsUnsupportedMessageTypeWithoutPersisting() throws Exception {
-		assertThatThrownBy(() -> ingestService.ingest(JmsTestMessages.bytesMessage("ID:2"), "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("Unsupported message type");
+	void ingest_archivesUnsupportedMessageTypeAsDlq() throws Exception {
+		assertThat(ingestService.ingest(JmsTestMessages.bytesMessage("ID:2"), "DEV.QUEUE.1"))
+				.isEqualTo(IngestOutcome.DLQ);
 
-		assertThat(repository.count()).isZero();
+		assertThat(repository.findByMessageId("ID:2")).hasValueSatisfying(saved -> {
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+			assertThat(saved.getPayload()).contains("Unsupported message type");
+		});
 	}
 }

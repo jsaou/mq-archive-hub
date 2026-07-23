@@ -1,9 +1,27 @@
 package com.bank.mq.archive.exception;
 
-// Non-retryable failure: listener must park the message on the DLQ then ACK
+import java.util.Objects;
+
+/**
+ * Non-retryable ingest failure.
+ * {@link Disposition#ERROR}: archive with status ERROR (ACK, no MQ DLQ).
+ * {@link Disposition#DLQ}: archive with status DLQ then park on the MQ DLQ.
+ */
 public class PermanentIngestException extends RuntimeException {
 
-	public PermanentIngestException(String message) {
+	public enum Disposition {
+		ERROR,
+		DLQ
+	}
+
+	private final Disposition disposition;
+
+	public PermanentIngestException(String message, Disposition disposition) {
 		super(message);
+		this.disposition = Objects.requireNonNull(disposition, "disposition");
+	}
+
+	public Disposition getDisposition() {
+		return disposition;
 	}
 }

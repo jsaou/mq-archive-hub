@@ -55,9 +55,9 @@ class MessageQueryControllerIT extends AbstractIntegrationTest {
 
 	@Test
 	void list_filtersByQueueNameAndStatus() throws Exception {
-		MqMessage processed = new MqMessage("ID:1", null, "DEV.QUEUE.1", "a", null);
-		processed.markProcessed();
-		repository.saveAndFlush(processed);
+		MqMessage errored = new MqMessage("ID:1", null, "DEV.QUEUE.1", "a", null);
+		errored.markError();
+		repository.saveAndFlush(errored);
 		repository.saveAndFlush(new MqMessage("ID:2", null, "DEV.QUEUE.1", "b", null));
 		repository.saveAndFlush(new MqMessage("ID:3", null, "OTHER.QUEUE", "c", null));
 

@@ -54,17 +54,23 @@ public class MqMessage {
 			String queueName,
 			String payload,
 			String contentType) {
+		this(messageId, correlationId, queueName, payload, contentType, MessageStatus.RECEIVED);
+	}
+
+	public MqMessage(
+			String messageId,
+			String correlationId,
+			String queueName,
+			String payload,
+			String contentType,
+			MessageStatus status) {
 		this.messageId = Objects.requireNonNull(messageId, "messageId");
 		this.queueName = Objects.requireNonNull(queueName, "queueName");
 		this.payload = Objects.requireNonNull(payload, "payload");
 		this.correlationId = correlationId;
 		this.contentType = contentType;
-		this.status = MessageStatus.RECEIVED;
+		this.status = Objects.requireNonNull(status, "status");
 		this.receivedAt = Instant.now();
-	}
-
-	public void markProcessed() {
-		this.status = MessageStatus.PROCESSED;
 	}
 
 	public void markError() {

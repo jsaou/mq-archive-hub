@@ -18,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.QueryTimeoutException;
 
 import com.bank.mq.archive.config.AppProperties;
-import com.bank.mq.archive.exception.PermanentIngestException;
+import com.bank.mq.archive.service.IngestOutcome;
 import com.bank.mq.archive.service.MqIngestService;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -54,6 +54,8 @@ class MqMessageListenerTest {
 
 	@Test
 	void onMessage_delegatesToIngestService() throws Exception {
+		when(ingestService.ingest(message, "DEV.QUEUE.1")).thenReturn(IngestOutcome.SUCCESS);
+
 		listener.onMessage(message, session);
 
 		verify(ingestService).ingest(message, "DEV.QUEUE.1");
@@ -61,11 +63,20 @@ class MqMessageListenerTest {
 	}
 
 	@Test
+	void onMessage_doesNotParkWhenOutcomeIsError() throws Exception {
+		when(ingestService.ingest(message, "DEV.QUEUE.1")).thenReturn(IngestOutcome.ERROR);
+
+		listener.onMessage(message, session);
+
+		verify(session, never()).createProducer(any());
+		assertThat(meterRegistry.counter("mq.ingest.dlq").count()).isZero();
+	}
+
+	@Test
 	void onMessage_parksPoisonMessageOnDlq() throws Exception {
 		Queue dlq = mock(Queue.class);
 		MessageProducer producer = mock(MessageProducer.class);
-		doThrow(new PermanentIngestException("missing JMSMessageID"))
-				.when(ingestService).ingest(message, "DEV.QUEUE.1");
+		when(ingestService.ingest(message, "DEV.QUEUE.1")).thenReturn(IngestOutcome.DLQ);
 		when(session.createQueue("DEV.QUEUE.2")).thenReturn(dlq);
 		when(session.createProducer(dlq)).thenReturn(producer);
 
@@ -77,8 +88,8 @@ class MqMessageListenerTest {
 
 	@Test
 	void onMessage_propagatesTransientErrors() throws Exception {
-		doThrow(new QueryTimeoutException("db timeout"))
-				.when(ingestService).ingest(eq(message), eq("DEV.QUEUE.1"));
+		when(ingestService.ingest(eq(message), eq("DEV.QUEUE.1")))
+				.thenThrow(new QueryTimeoutException("db timeout"));
 
 		assertThatThrownBy(() -> listener.onMessage(message, session))
 				.isInstanceOf(QueryTimeoutException.class);
@@ -91,8 +102,7 @@ class MqMessageListenerTest {
 	void onMessage_propagatesDlqSendFailure() throws Exception {
 		Queue dlq = mock(Queue.class);
 		MessageProducer producer = mock(MessageProducer.class);
-		doThrow(new PermanentIngestException("unsupported type"))
-				.when(ingestService).ingest(message, "DEV.QUEUE.1");
+		when(ingestService.ingest(message, "DEV.QUEUE.1")).thenReturn(IngestOutcome.DLQ);
 		when(session.createQueue("DEV.QUEUE.2")).thenReturn(dlq);
 		when(session.createProducer(dlq)).thenReturn(producer);
 		doThrow(new JMSException("dlq unavailable")).when(producer).send(message);

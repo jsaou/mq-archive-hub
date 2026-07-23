@@ -21,7 +21,18 @@ public record MqMessageDto(
 			String queueName,
 			String payload,
 			String contentType) {
-		return new MqMessageDto(null, messageId, correlationId, queueName, payload, contentType, null, null);
+		return new MqMessageDto(
+				null, messageId, correlationId, queueName, payload, contentType, MessageStatus.RECEIVED, null);
+	}
+
+	public static MqMessageDto forFailure(
+			String messageId,
+			String correlationId,
+			String queueName,
+			String payload,
+			String contentType,
+			MessageStatus status) {
+		return new MqMessageDto(null, messageId, correlationId, queueName, payload, contentType, status, null);
 	}
 
 	public static MqMessageDto from(MqMessage message) {
@@ -37,6 +48,6 @@ public record MqMessageDto(
 	}
 
 	public MqMessage toEntity() {
-		return new MqMessage(messageId, correlationId, queueName, payload, contentType);
+		return new MqMessage(messageId, correlationId, queueName, payload, contentType, status);
 	}
 }

@@ -26,6 +26,14 @@ class MqMessageDtoTest {
 	}
 
 	@Test
+	void forFailure_toEntity_mapsStatus() {
+		MqMessageDto dto = MqMessageDto.forFailure(
+				"ID:1", null, "DEV.QUEUE.1", "[ingest-error] boom", null, MessageStatus.ERROR);
+
+		assertThat(dto.toEntity().getStatus()).isEqualTo(MessageStatus.ERROR);
+	}
+
+	@Test
 	void from_mapsAllFields() {
 		MqMessage entity = new MqMessage("ID:1", "CORR:1", "DEV.QUEUE.1", "payload", "text/plain");
 

@@ -91,12 +91,12 @@ class MqMessageRepositoryTest {
 	@Test
 	void findAll_filtersByStatus() {
 		MqMessage received = repository.saveAndFlush(new MqMessage("ID:1", null, "Q.A", "a", null));
-		MqMessage processed = new MqMessage("ID:2", null, "Q.A", "b", null);
-		processed.markProcessed();
-		repository.saveAndFlush(processed);
+		MqMessage errored = new MqMessage("ID:2", null, "Q.A", "b", null);
+		errored.markError();
+		repository.saveAndFlush(errored);
 
 		Page<MqMessage> page = repository.findAll(
-				MqMessageSpecs.withFilters(new MqMessageSearchCriteria(null, MessageStatus.PROCESSED, null, null)),
+				MqMessageSpecs.withFilters(new MqMessageSearchCriteria(null, MessageStatus.ERROR, null, null)),
 				PageRequest.of(0, 20));
 
 		assertThat(page.getTotalElements()).isEqualTo(1);

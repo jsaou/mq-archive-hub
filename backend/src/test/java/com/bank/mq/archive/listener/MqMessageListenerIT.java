@@ -49,7 +49,7 @@ class MqMessageListenerIT extends AbstractIntegrationTest {
 	}
 
 	@Test
-	void onMessage_parksInvalidMessageOnDlqWithoutPersisting() throws Exception {
+	void onMessage_parksInvalidMessageOnDlqAndPersists() throws Exception {
 		TextMessage message = JmsTestMessages.textMessage(null, null, "poison", null);
 		Session session = mock(Session.class);
 		Queue dlq = mock(Queue.class);
@@ -60,7 +60,23 @@ class MqMessageListenerIT extends AbstractIntegrationTest {
 		listener.onMessage(message, session);
 
 		verify(producer).send(message);
-		assertThat(repository.count()).isZero();
+		assertThat(repository.count()).isEqualTo(1);
+		assertThat(repository.findAll().getFirst()).satisfies(saved -> {
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+			assertThat(saved.getMessageId()).startsWith("MISSING:");
+		});
+	}
+
+	@Test
+	void onMessage_archivesNullPayloadAsErrorWithoutDlq() throws Exception {
+		TextMessage message = JmsTestMessages.textMessage("ID:error-1", null, null, null);
+		Session session = mock(Session.class);
+
+		listener.onMessage(message, session);
+
+		verify(session, never()).createProducer(any());
+		assertThat(repository.findByMessageId("ID:error-1")).hasValueSatisfying(saved ->
+				assertThat(saved.getStatus()).isEqualTo(MessageStatus.ERROR));
 	}
 
 	@Test

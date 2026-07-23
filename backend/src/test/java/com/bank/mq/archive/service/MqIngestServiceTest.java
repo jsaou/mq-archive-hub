@@ -8,6 +8,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,7 +21,6 @@ import org.springframework.dao.QueryTimeoutException;
 
 import com.bank.mq.archive.entity.MessageStatus;
 import com.bank.mq.archive.entity.MqMessage;
-import com.bank.mq.archive.exception.PermanentIngestException;
 import com.bank.mq.archive.repository.MqMessageRepository;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -54,7 +55,7 @@ class MqIngestServiceTest {
 		when(textMessage.getJMSType()).thenReturn("text/plain");
 		when(repository.existsByMessageId("ID:1")).thenReturn(false);
 
-		service.ingest(textMessage, "DEV.QUEUE.1");
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.SUCCESS);
 
 		ArgumentCaptor<MqMessage> captor = ArgumentCaptor.forClass(MqMessage.class);
 		verify(repository).save(captor.capture());
@@ -107,11 +108,24 @@ class MqIngestServiceTest {
 	void ingest_skipsDuplicate() throws Exception {
 		when(textMessage.getJMSMessageID()).thenReturn("ID:1");
 		when(repository.existsByMessageId("ID:1")).thenReturn(true);
+		when(repository.findByMessageId("ID:1")).thenReturn(Optional.of(
+				new MqMessage("ID:1", null, "DEV.QUEUE.1", "payload", null)));
 
-		service.ingest(textMessage, "DEV.QUEUE.1");
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DUPLICATE);
 
 		verify(repository, never()).save(any());
 		assertThat(meterRegistry.counter("mq.ingest.duplicate").count()).isEqualTo(1);
+	}
+
+	@Test
+	void ingest_asksRedeliveryToParkWhenDuplicateIsAlreadyDlq() throws Exception {
+		when(textMessage.getJMSMessageID()).thenReturn("ID:1");
+		when(repository.existsByMessageId("ID:1")).thenReturn(true);
+		MqMessage existing = new MqMessage("ID:1", null, "DEV.QUEUE.1", "[ingest-dlq] boom", null, MessageStatus.DLQ);
+		when(repository.findByMessageId("ID:1")).thenReturn(Optional.of(existing));
+
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
+		verify(repository, never()).save(any());
 	}
 
 	@Test
@@ -121,61 +135,62 @@ class MqIngestServiceTest {
 		when(repository.existsByMessageId("ID:1")).thenReturn(false);
 		when(repository.save(any())).thenThrow(new DataIntegrityViolationException("duplicate"));
 
-		service.ingest(textMessage, "DEV.QUEUE.1");
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DUPLICATE);
 
 		assertThat(meterRegistry.counter("mq.ingest.duplicate").count()).isEqualTo(1);
 		assertThat(meterRegistry.counter("mq.ingest.success").count()).isZero();
 	}
 
 	@Test
-	void ingest_throwsPermanentOnBlankMessageId() throws Exception {
+	void ingest_archivesMissingMessageIdAsDlq() throws Exception {
 		when(textMessage.getJMSMessageID()).thenReturn(" ");
+		when(textMessage.getJMSCorrelationID()).thenReturn(null);
 
-		assertThatThrownBy(() -> service.ingest(textMessage, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("JMSMessageID");
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
 
-		verify(repository, never()).existsByMessageId(any());
-		verify(repository, never()).save(any());
+		ArgumentCaptor<MqMessage> captor = ArgumentCaptor.forClass(MqMessage.class);
+		verify(repository).save(captor.capture());
+		MqMessage saved = captor.getValue();
+		assertThat(saved.getMessageId()).startsWith("MISSING:");
+		assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+		assertThat(saved.getPayload()).contains("missing JMSMessageID");
 		assertThat(meterRegistry.counter("mq.ingest.failure").count()).isEqualTo(1);
 	}
 
 	@Test
-	void ingest_throwsPermanentOnNullMessageId() throws Exception {
-		when(textMessage.getJMSMessageID()).thenReturn(null);
-
-		assertThatThrownBy(() -> service.ingest(textMessage, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class);
-
-		verify(repository, never()).save(any());
-		assertThat(meterRegistry.counter("mq.ingest.failure").count()).isEqualTo(1);
-	}
-
-	@Test
-	void ingest_throwsPermanentOnUnsupportedMessageType() throws Exception {
-		BytesMessage bytesMessage = mock(BytesMessage.class);
-		when(bytesMessage.getJMSMessageID()).thenReturn("ID:2");
-		when(repository.existsByMessageId("ID:2")).thenReturn(false);
-
-		assertThatThrownBy(() -> service.ingest(bytesMessage, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("Unsupported message type");
-
-		verify(repository, never()).save(any());
-		assertThat(meterRegistry.counter("mq.ingest.failure").count()).isEqualTo(1);
-	}
-
-	@Test
-	void ingest_throwsPermanentOnNullPayload() throws Exception {
+	void ingest_archivesNullPayloadAsError() throws Exception {
 		when(textMessage.getJMSMessageID()).thenReturn("ID:1");
+		when(textMessage.getJMSCorrelationID()).thenReturn("CORR:1");
 		when(textMessage.getText()).thenReturn(null);
+		when(textMessage.getStringProperty("JMS_IBM_Format")).thenReturn(null);
+		when(textMessage.getJMSType()).thenReturn("text/plain");
 		when(repository.existsByMessageId("ID:1")).thenReturn(false);
 
-		assertThatThrownBy(() -> service.ingest(textMessage, "DEV.QUEUE.1"))
-				.isInstanceOf(PermanentIngestException.class)
-				.hasMessageContaining("payload is null");
+		assertThat(service.ingest(textMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.ERROR);
 
-		verify(repository, never()).save(any());
+		ArgumentCaptor<MqMessage> captor = ArgumentCaptor.forClass(MqMessage.class);
+		verify(repository).save(captor.capture());
+		MqMessage saved = captor.getValue();
+		assertThat(saved.getStatus()).isEqualTo(MessageStatus.ERROR);
+		assertThat(saved.getPayload()).contains("payload is null");
+		assertThat(meterRegistry.counter("mq.ingest.failure").count()).isEqualTo(1);
+		assertThat(meterRegistry.counter("mq.ingest.success").count()).isZero();
+	}
+
+	@Test
+	void ingest_archivesUnsupportedTypeAsDlq() throws Exception {
+		BytesMessage bytesMessage = mock(BytesMessage.class);
+		when(bytesMessage.getJMSMessageID()).thenReturn("ID:2");
+		when(bytesMessage.getJMSCorrelationID()).thenReturn(null);
+		when(repository.existsByMessageId("ID:2")).thenReturn(false);
+
+		assertThat(service.ingest(bytesMessage, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
+
+		ArgumentCaptor<MqMessage> captor = ArgumentCaptor.forClass(MqMessage.class);
+		verify(repository).save(captor.capture());
+		MqMessage saved = captor.getValue();
+		assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+		assertThat(saved.getPayload()).contains("Unsupported message type");
 		assertThat(meterRegistry.counter("mq.ingest.failure").count()).isEqualTo(1);
 	}
 

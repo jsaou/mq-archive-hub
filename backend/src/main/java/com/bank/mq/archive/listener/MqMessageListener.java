@@ -6,7 +6,7 @@ import org.springframework.jms.annotation.JmsListener;
 import org.springframework.stereotype.Component;
 
 import com.bank.mq.archive.config.AppProperties;
-import com.bank.mq.archive.exception.PermanentIngestException;
+import com.bank.mq.archive.service.IngestOutcome;
 import com.bank.mq.archive.service.MqIngestService;
 
 import io.micrometer.core.instrument.Counter;
@@ -38,19 +38,16 @@ public class MqMessageListener {
 
 	@JmsListener(destination = "${app.mq.queue-name}")
 	public void onMessage(Message message, Session session) throws JMSException {
-		// Poison → DLQ (same session); other errors propagate for JMS rollback
-		try {
-			ingestService.ingest(message, queueName);
-		}
-		catch (PermanentIngestException ex) {
-			parkOnDlq(message, session, ex);
+		// DLQ outcome → park on MQ DLQ (same session); other outcomes ACK; transient errors rollback
+		IngestOutcome outcome = ingestService.ingest(message, queueName);
+		if (outcome == IngestOutcome.DLQ) {
+			parkOnDlq(message, session);
 		}
 	}
 
 	// Same-session send keeps consume + DLQ atomic under sessionTransacted
-	private void parkOnDlq(Message message, Session session, PermanentIngestException cause)
-			throws JMSException {
-		log.warn("Parking poison message on {}: {}", dlqName, cause.getMessage());
+	private void parkOnDlq(Message message, Session session) throws JMSException {
+		log.warn("Parking poison message on {}", dlqName);
 		try (MessageProducer producer = session.createProducer(session.createQueue(dlqName))) {
 			producer.send(message);
 		}
