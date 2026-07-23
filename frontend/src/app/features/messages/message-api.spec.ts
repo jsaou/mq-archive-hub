@@ -1,4 +1,4 @@
-import { buildMessagesListRequest } from './message-api';
+import { buildMessageDetailRequest, buildMessagesListRequest } from './message-api';
 import { EMPTY_MESSAGE_FILTERS } from './message.model';
 
 describe('buildMessagesListRequest', () => {
@@ -8,7 +8,7 @@ describe('buildMessagesListRequest', () => {
     expect(request.url).toBe('/api/v1/messages');
     expect(request.params.get('page')).toBe('2');
     expect(request.params.get('size')).toBe('50');
-    expect(request.params.get('sort')).toBe('id,asc');
+    expect(request.params.get('sort')).toBe('receivedAt,desc');
   });
 
   it('omits blank filter values', () => {
@@ -45,5 +45,17 @@ describe('buildMessagesListRequest', () => {
     expect(request.params.get('status')).toBe('ERROR');
     expect(request.params.get('messageId')).toBe('ID:1');
     expect(request.params.get('correlationId')).toBe('CORR:9');
+  });
+});
+
+describe('buildMessageDetailRequest', () => {
+  it('builds the detail URL for a numeric id', () => {
+    expect(buildMessageDetailRequest(42)).toEqual({ url: '/api/v1/messages/42' });
+    expect(buildMessageDetailRequest('7')).toEqual({ url: '/api/v1/messages/7' });
+  });
+
+  it('skips invalid ids', () => {
+    expect(buildMessageDetailRequest('')).toBeUndefined();
+    expect(buildMessageDetailRequest('abc')).toBeUndefined();
   });
 });

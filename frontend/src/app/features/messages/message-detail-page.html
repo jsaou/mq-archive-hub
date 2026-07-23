@@ -1,12 +1,63 @@
-<mat-card appearance="outlined" class="detail-card">
-  <mat-card-header>
-    <mat-card-title>Message detail</mat-card-title>
-    <mat-card-subtitle>ID {{ id() }}</mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <p>
-      Detail view is not implemented yet. Routing is ready so the list can navigate here.
-    </p>
-    <a matButton="filled" routerLink="/messages">Back to messages</a>
-  </mat-card-content>
-</mat-card>
+<section class="detail-page" data-testid="message-detail-page">
+  <header class="detail-page__header">
+    <div>
+      <a matButton routerLink="/messages" data-testid="back-to-messages">← Back to messages</a>
+      <h1>Message detail</h1>
+      <p class="detail-page__subtitle">Archive record #{{ id() }}</p>
+    </div>
+    <div class="detail-page__actions">
+      <button matButton="filled" type="button" (click)="reload()">Refresh</button>
+    </div>
+  </header>
+
+  @if (message.isLoading()) {
+    <mat-progress-bar mode="indeterminate" class="detail-page__loading" />
+  }
+
+  @if (notFound()) {
+    <div class="detail-page__state detail-page__state--error" role="alert">
+      Message not found.
+      <a matButton routerLink="/messages">Back to list</a>
+    </div>
+  } @else if (message.error(); as error) {
+    <div class="detail-page__state detail-page__state--error" role="alert">
+      Failed to load message. {{ error.message || 'Please try again.' }}
+    </div>
+  }
+
+  @if (detail(); as row) {
+    <dl class="meta">
+      <div class="meta__item">
+        <dt>ID</dt>
+        <dd>{{ row.id }}</dd>
+      </div>
+      <div class="meta__item">
+        <dt>Message ID</dt>
+        <dd class="mono">{{ row.messageId }}</dd>
+      </div>
+      <div class="meta__item">
+        <dt>Correlation ID</dt>
+        <dd class="mono">{{ row.correlationId || '—' }}</dd>
+      </div>
+      <div class="meta__item">
+        <dt>Content type</dt>
+        <dd class="mono">{{ row.contentType || '—' }}</dd>
+      </div>
+      <div class="meta__item">
+        <dt>Status</dt>
+        <dd>
+          <mat-chip [class]="statusClass(row.status)">{{ row.status }}</mat-chip>
+        </dd>
+      </div>
+      <div class="meta__item">
+        <dt>Received at</dt>
+        <dd>{{ row.receivedAt | date: 'yyyy-MM-dd HH:mm:ss' : 'UTC' }} UTC</dd>
+      </div>
+    </dl>
+
+    <section class="payload" data-testid="message-payload">
+      <h2>Payload</h2>
+      <pre class="payload__body mono">{{ row.payload }}</pre>
+    </section>
+  }
+</section>

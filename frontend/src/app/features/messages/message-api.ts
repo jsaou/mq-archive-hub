@@ -11,7 +11,7 @@ export function buildMessagesListRequest(
   let params = new HttpParams()
     .set('page', page)
     .set('size', size)
-    .set('sort', 'id,asc');
+    .set('sort', 'receivedAt,desc');
 
   const queueName = filters.queueName.trim();
   const messageId = filters.messageId.trim();
@@ -34,4 +34,12 @@ export function buildMessagesListRequest(
     url: `${API_BASE_PATH}/messages`,
     params,
   };
+}
+
+export function buildMessageDetailRequest(id: string | number): { url: string } | undefined {
+  const normalized = String(id).trim();
+  if (!normalized || Number.isNaN(Number(normalized))) {
+    return undefined;
+  }
+  return { url: `${API_BASE_PATH}/messages/${normalized}` };
 }

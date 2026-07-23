@@ -53,7 +53,7 @@ describe('MessageListPage', () => {
     );
     expect(req.request.params.get('page')).toBe('0');
     expect(req.request.params.get('size')).toBe('20');
-    expect(req.request.params.get('sort')).toBe('id,asc');
+    expect(req.request.params.get('sort')).toBe('receivedAt,desc');
 
     if (status === 200) {
       req.flush(body);

@@ -47,3 +47,7 @@ export const EMPTY_MESSAGE_FILTERS: MessageSearchFilters = {
   messageId: '',
   correlationId: '',
 };
+
+export function statusChipClass(status: MessageStatus): string {
+  return `status status--${status.toLowerCase()}`;
+}
