@@ -49,7 +49,7 @@ class MessageQueryServiceTest {
 	@BeforeEach
 	void setUp() {
 		AppProperties appProperties = new AppProperties(
-				new AppProperties.MqProperties("DEV.QUEUE.1", "DEV.QUEUE.2", "3-10"),
+				new AppProperties.MqProperties("DEV.QUEUE.1", "DEV.QUEUE.2", "3-10", 5, 1_048_576),
 				new AppProperties.ApiProperties("/api/v1", MAX_PAGE_SIZE, DEFAULT_PAGE_SIZE));
 		service = new MessageQueryService(repository, appProperties);
 	}

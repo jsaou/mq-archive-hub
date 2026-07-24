@@ -17,7 +17,9 @@ public record AppProperties(
 	public record MqProperties(
 			@NotBlank String queueName,
 			@NotBlank String dlqName,
-			@NotBlank String concurrency) {
+			@NotBlank String concurrency,
+			@Positive int maxRedelivery,
+			@Positive int maxPayloadBytes) {
 	}
 
 	public record ApiProperties(

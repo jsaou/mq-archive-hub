@@ -47,7 +47,7 @@ class MqMessageListenerTest {
 	void setUp() {
 		meterRegistry = new SimpleMeterRegistry();
 		AppProperties appProperties = new AppProperties(
-				new AppProperties.MqProperties("DEV.QUEUE.1", "DEV.QUEUE.2", "3-10"),
+				new AppProperties.MqProperties("DEV.QUEUE.1", "DEV.QUEUE.2", "3-10", 5, 1_048_576),
 				new AppProperties.ApiProperties("/api/v1", 20, 100));
 		listener = new MqMessageListener(ingestService, meterRegistry, appProperties);
 	}

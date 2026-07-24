@@ -90,4 +90,31 @@ class MqIngestServiceIT extends AbstractIntegrationTest {
 			assertThat(saved.getPayload()).contains("Unsupported message type");
 		});
 	}
+
+	@Test
+	void ingest_archivesOversizedPayloadAsDlq() throws Exception {
+		TextMessage message = JmsTestMessages.textMessage(
+				"ID:big", null, "x".repeat(1_048_576 + 1), null);
+
+		assertThat(ingestService.ingest(message, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
+
+		assertThat(repository.findByMessageId("ID:big")).hasValueSatisfying(saved -> {
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+			assertThat(saved.getPayload()).contains("Payload exceeds max size");
+		});
+	}
+
+	@Test
+	void ingest_archivesWhenRedeliveryExceededAsDlq() throws Exception {
+		TextMessage message = JmsTestMessages.textMessage("ID:retry", null, "payload", null);
+		org.mockito.Mockito.when(message.propertyExists("JMSXDeliveryCount")).thenReturn(true);
+		org.mockito.Mockito.when(message.getIntProperty("JMSXDeliveryCount")).thenReturn(6);
+
+		assertThat(ingestService.ingest(message, "DEV.QUEUE.1")).isEqualTo(IngestOutcome.DLQ);
+
+		assertThat(repository.findByMessageId("ID:retry")).hasValueSatisfying(saved -> {
+			assertThat(saved.getStatus()).isEqualTo(MessageStatus.DLQ);
+			assertThat(saved.getPayload()).contains("exceeded max redelivery");
+		});
+	}
 }

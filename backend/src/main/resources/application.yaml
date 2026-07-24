@@ -55,6 +55,8 @@ app:
     queue-name: ${MQ_QUEUE_NAME:DEV.QUEUE.1}
     dlq-name: ${MQ_DLQ_NAME:DEV.QUEUE.2}
     concurrency: ${MQ_CONCURRENCY:3-10}
+    max-redelivery: ${MQ_MAX_REDELIVERY:5}
+    max-payload-bytes: ${MQ_MAX_PAYLOAD_BYTES:1048576}
   api:
     base-path: ${API_BASE_PATH:/api/v1}
     max-page-size: ${API_MAX_PAGE_SIZE:100}

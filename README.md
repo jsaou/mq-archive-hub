@@ -22,6 +22,10 @@ mq-archive-hub/
 - Micrometer + Prometheus
 - Angular 22, Angular Material, Signal Forms, Vitest
 
+Ingest resilience defaults: concurrent listeners (`3-10`), idempotent insert on `message_id`,
+application DLQ, max redelivery (`JMSXDeliveryCount`), and max payload size after `getText()`
+(1 MiB UTF-8 — storage guard; use MQ `MAXMSGL` for receive-time OOM protection).
+
 ## Prerequisites
 
 - JDK 21+ (only if running the API outside Docker)
@@ -89,6 +93,8 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 | `MQ_QUEUE_NAME` | `DEV.QUEUE.1` | Source queue |
 | `MQ_DLQ_NAME` | `DEV.QUEUE.2` | Dead-letter queue |
 | `MQ_CONCURRENCY` | `3-10` | Listener thread range |
+| `MQ_MAX_REDELIVERY` | `5` | Max `JMSXDeliveryCount` before forced DLQ |
+| `MQ_MAX_PAYLOAD_BYTES` | `1048576` | Max TextMessage size archived (UTF-8, checked **after** `getText()` → DLQ if over). Not an OOM shield: JMS `TextMessage` has no portable body length before load; enforce MQ `MAXMSGL` / channel limits for that. |
 | `API_PORT` | `8080` | Host port for the API container |
 | `API_BASE_PATH` | `/api/v1` | API version prefix |
 | `API_MAX_PAGE_SIZE` | `100` | Maximum page size |

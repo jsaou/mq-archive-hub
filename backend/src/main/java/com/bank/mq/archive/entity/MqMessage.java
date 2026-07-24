@@ -11,18 +11,21 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
-@Table(name = "mq_message")
+@Table(
+		name = "mq_message",
+		uniqueConstraints = @UniqueConstraint(name = "uq_mq_message_message_id", columnNames = "message_id"))
 public class MqMessage {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "message_id", nullable = false, unique = true, length = 100)
+	@Column(name = "message_id", nullable = false, length = 100)
 	private String messageId;
 
 	@Column(name = "correlation_id", length = 100)

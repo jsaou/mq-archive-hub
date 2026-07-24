@@ -23,12 +23,16 @@ public final class JmsTestMessages {
 		when(message.getText()).thenReturn(payload);
 		when(message.getStringProperty("JMS_IBM_Format")).thenReturn(null);
 		when(message.getJMSType()).thenReturn(contentType);
+		when(message.propertyExists("JMSXDeliveryCount")).thenReturn(true);
+		when(message.getIntProperty("JMSXDeliveryCount")).thenReturn(1);
 		return message;
 	}
 
 	public static BytesMessage bytesMessage(String messageId) throws JMSException {
 		BytesMessage message = mock(BytesMessage.class);
 		when(message.getJMSMessageID()).thenReturn(messageId);
+		when(message.propertyExists("JMSXDeliveryCount")).thenReturn(true);
+		when(message.getIntProperty("JMSXDeliveryCount")).thenReturn(1);
 		return message;
 	}
 }
