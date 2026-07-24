@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.angular/
+e2e/
+playwright-report/
+test-results/
+*.md
+.git/
+.gitignore
+.editorconfig
+.vscode/
+.idea/
+**/*.spec.ts
+**/tsconfig.spec.json
+playwright.config.ts
+proxy.conf.json

@@ -60,7 +60,7 @@ jobs:
         run: npm run build
 
   docker:
-    name: Docker (backend image)
+    name: Docker (backend + frontend images)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -75,5 +75,15 @@ jobs:
           file: ./backend/Dockerfile
           push: false
           tags: mq-archive-hub-backend:ci
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: false
+          tags: mq-archive-hub-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend

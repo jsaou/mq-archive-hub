@@ -58,6 +58,17 @@ services:
       API_DEFAULT_PAGE_SIZE: ${API_DEFAULT_PAGE_SIZE:-20}
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mqhub-frontend
+    depends_on:
+      - backend
+    ports:
+      - "${UI_PORT:-4200}:80"
+    restart: unless-stopped
+
 volumes:
   postgres-data:
   mq-data:

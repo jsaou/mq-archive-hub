@@ -7,7 +7,7 @@ Archives IBM MQ messages into PostgreSQL and exposes them through a versioned RE
 ```
 mq-archive-hub/
 ├── backend/          # Spring Boot 4 (Java 21) + Dockerfile
-├── frontend/         # Angular 22 + Material (list UI)
+├── frontend/         # Angular 22 + Material + Dockerfile (nginx)
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
@@ -18,7 +18,7 @@ mq-archive-hub/
 - Java 21, Spring Boot 4
 - PostgreSQL + Flyway
 - IBM MQ (JMS)
-- Docker Compose (Postgres + MQ + backend)
+- Docker Compose (Postgres + MQ + backend + frontend)
 - Micrometer + Prometheus
 - Angular 22, Angular Material, Signal Forms, Vitest
 
@@ -26,18 +26,19 @@ mq-archive-hub/
 
 - JDK 21+ (only if running the API outside Docker)
 - Maven (or `backend/mvnw`) — only if running the API outside Docker
-- Node.js 20+ and npm
+- Node.js 20+ and npm (only if running the UI outside Docker)
 - Docker
 
 ## Getting started
 
-### Full stack (infra + API in Docker)
+### Full stack (infra + API + UI in Docker)
 
 ```bash
 cp .env.example .env
 docker compose up -d --build
 ```
 
+- UI: `http://localhost:4200` (nginx proxies `/api` → backend)
 - API: `http://localhost:8080`
 - MQ console: `https://localhost:9443`
 
@@ -49,7 +50,7 @@ cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-### Angular UI
+### Angular UI (local dev)
 
 With the API already running:
 
@@ -92,6 +93,7 @@ All settings are driven by environment variables. Copy `.env.example` to `.env` 
 | `API_BASE_PATH` | `/api/v1` | API version prefix |
 | `API_MAX_PAGE_SIZE` | `100` | Maximum page size |
 | `API_DEFAULT_PAGE_SIZE` | `20` | Default page size |
+| `UI_PORT` | `4200` | Host port for the Angular UI container |
 
 ## Tests
 
